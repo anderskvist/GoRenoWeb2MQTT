@@ -90,7 +90,7 @@ func GetRenoWebAddressID(cfg *ini.File) int {
 	return addressSearch.List[0].Value
 }
 
-func GetRenoWebPickupPlan(id int) {
+func GetRenoWebPickupPlan(id int) PickupPlan {
 	search := pickupPlanSearch{
 		Adrid:  id,
 		Common: false}
@@ -115,4 +115,5 @@ func GetRenoWebPickupPlan(id int) {
 		panic(err)
 	}
 	log.Infof("%#v\n", pickupPlan)
+	return pickupPlan
 }

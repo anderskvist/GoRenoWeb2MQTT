@@ -4,6 +4,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/anderskvist/GoRenoWeb2MQTT/mqtt"
 	"github.com/anderskvist/GoRenoWeb2MQTT/renoweb"
 
 	"github.com/anderskvist/DVIEnergiSmartControl/log"
@@ -26,13 +27,11 @@ func main() {
 		}
 		log.Info("Getting data from RenoWeb")
 		addressID := renoweb.GetRenoWebAddressID(cfg)
-		renoweb.GetRenoWebPickupPlan(addressID)
-		//dviData := dvi.GetDviData(cfg)
+		pickupPlans := renoweb.GetRenoWebPickupPlan(addressID)
 		log.Info("Done getting data from RenoWeb")
 
 		log.Info("Sending data to MQTT")
-		//mqtt.SendToMQTT(cfg, dviData)
+		mqtt.SendToMQTT(cfg, pickupPlans)
 		log.Info("Done sending to MQTT")
-		os.Exit(0)
 	}
 }

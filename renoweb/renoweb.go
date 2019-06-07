@@ -10,13 +10,13 @@ import (
 	ini "gopkg.in/ini.v1"
 )
 
-type AddressSearchSearch struct {
+type addressSearchSearch struct {
 	Searchterm          string `json:"searchterm"`
 	Addresswithmateriel int    `json:"addresswithmateriel"`
 }
 
 // D is a temporary struct to keep data from renoweb
-type D struct {
+type tempData struct {
 	D string `json:"d"`
 }
 
@@ -36,7 +36,7 @@ type AddressSearchStatus struct {
 	Msg    string `json:"msg"`
 }
 
-type PickupPlanSearch struct {
+type pickupPlanSearch struct {
 	Adrid  int  `json:"adrid"`
 	Common bool `json:"common"`
 }
@@ -63,7 +63,7 @@ func jsonPrettyPrint(in string) string {
 }
 
 func GetRenoWebAddressID(cfg *ini.File) int {
-	search := AddressSearchSearch{
+	search := addressSearchSearch{
 		Searchterm:          cfg.Section("renoweb").Key("address").String(),
 		Addresswithmateriel: 3}
 
@@ -74,7 +74,7 @@ func GetRenoWebAddressID(cfg *ini.File) int {
 	data, _ := ioutil.ReadAll(response.Body)
 	log.Debugf("%s\n", jsonPrettyPrint(string(data)))
 
-	var d D
+	var d tempData
 	err := json.Unmarshal(data, &d)
 	if err != nil {
 		panic(err)
@@ -91,7 +91,7 @@ func GetRenoWebAddressID(cfg *ini.File) int {
 }
 
 func GetRenoWebPickupPlan(id int) {
-	search := PickupPlanSearch{
+	search := pickupPlanSearch{
 		Adrid:  id,
 		Common: false}
 
@@ -102,7 +102,7 @@ func GetRenoWebPickupPlan(id int) {
 	data, _ := ioutil.ReadAll(response.Body)
 	log.Debugf("%s\n", jsonPrettyPrint(string(data)))
 
-	var d D
+	var d tempData
 	err := json.Unmarshal(data, &d)
 	if err != nil {
 		panic(err)

@@ -26,7 +26,7 @@ func main() {
 		if t == t {
 		}
 		log.Info("Getting data from RenoWeb")
-		addressID := renoweb.GetRenoWebAddressID(cfg)
+		addressID := renoweb.GetRenoWebAddressID(cfg.Section("renoweb").Key("address").String())
 		pickupPlans := renoweb.GetRenoWebPickupPlan(addressID)
 		log.Info("Done getting data from RenoWeb")
 

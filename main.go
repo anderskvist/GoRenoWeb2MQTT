@@ -21,17 +21,27 @@ func main() {
 
 	poll := cfg.Section("main").Key("poll").MustInt(60)
 	log.Infof("Polltime is %d seconds.\n", poll)
+
+	reno, err := renoweb.NewClient(
+		renoweb.SetDebugLogger(log.Debugf),
+		renoweb.SetHostname(cfg.Section("renoweb").Key("hostname").String()),
+	)
+	if err != nil {
+		log.Criticalf("Unable to instantiate renoweb client: %s", err.Error())
+		os.Exit(1)
+	}
+
 	for t := range time.NewTicker(time.Duration(poll) * time.Second).C {
 		log.Notice("Tick")
 		if t == t {
 		}
 		log.Info("Getting data from RenoWeb")
-		addressID := renoweb.GetRenoWebAddressID(cfg.Section("renoweb").Key("address").String())
-		pickupPlans := renoweb.GetRenoWebPickupPlan(addressID)
+		addressID, _ := reno.AddressID(cfg.Section("renoweb").Key("address").String())
+		pickupPlans, _ := reno.PickupPlan(addressID)
 		log.Info("Done getting data from RenoWeb")
 
 		log.Info("Sending data to MQTT")
-		mqtt.SendToMQTT(cfg, pickupPlans)
+		mqtt.SendToMQTT(cfg, *pickupPlans)
 		log.Info("Done sending to MQTT")
 	}
 }

@@ -3,41 +3,46 @@ package renoweb
 import (
 	"bytes"
 	"encoding/json"
-	"io/ioutil"
 	"net/http"
-
-	"github.com/anderskvist/DVIEnergiSmartControl/log"
 )
 
-type addressSearchSearch struct {
-	Searchterm          string `json:"searchterm"`
-	Addresswithmateriel int    `json:"addresswithmateriel"`
+// Client is a client suitable for querying the "Renoweb" API.
+type Client struct {
+	baseURL     string
+	debugLogger func(format string, args ...interface{})
 }
 
-// D is a temporary struct to keep data from renoweb
-type tempData struct {
-	D string `json:"d"`
+// NewClient will return a new Client.
+func NewClient(options ...func(*Client) error) (*Client, error) {
+	c := new(Client)
+
+	for _, option := range options {
+		err := option(c)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return c, nil
 }
 
-type AddressSearch struct {
-	List   []AddressSearchList
-	Status AddressSearchStatus
+// SetHostname will set the hostname to use for acessing the API.
+func SetHostname(hostname string) func(*Client) error {
+	return func(c *Client) error {
+		c.baseURL = "https://" + hostname
+
+		return nil
+	}
 }
 
-type AddressSearchList struct {
-	Value int    `json:"value,string"`
-	Label string `json:"label"`
-}
+// SetDebugLogger can be used to provide a function, that will be used
+// for logging debug information.
+func SetDebugLogger(logger func(format string, args ...interface{})) func(*Client) error {
+	return func(c *Client) error {
+		c.debugLogger = logger
 
-type AddressSearchStatus struct {
-	ID     int    `json:"id"`
-	Status string `json:"status"`
-	Msg    string `json:"msg"`
-}
-
-type pickupPlanSearch struct {
-	Adrid  int  `json:"adrid"`
-	Common bool `json:"common"`
+		return nil
+	}
 }
 
 type PickupPlan struct {
@@ -52,67 +57,84 @@ type PickupPlanList struct {
 	ToemningsDato string `json:"toemningsdato"`
 }
 
-func jsonPrettyPrint(in string) string {
-	var out bytes.Buffer
-	err := json.Indent(&out, []byte(in), "", "\t")
+// request will perform a POST request to the API encoding payload as JSON and unmarshaling
+// the response to target.
+func (c *Client) request(uri string, payload interface{}, target interface{}) error {
+	requestBody, err := json.Marshal(payload)
 	if err != nil {
-		return in
+		return err
 	}
-	return out.String()
+
+	c.debugLogger("Request URL: %s", c.baseURL+uri)
+	c.debugLogger("Request body: %s", string(requestBody))
+
+	resp, err := http.Post(c.baseURL+uri, "application/json", bytes.NewBuffer(requestBody))
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	c.debugLogger("HTTP status code: %d", resp.StatusCode)
+
+	// Responses from the API are always wrapped in a JSON object.
+	var proxy struct {
+		Data string `json:"d"`
+	}
+
+	err = json.NewDecoder(resp.Body).Decode(&proxy)
+	if err != nil {
+		return err
+	}
+
+	return json.Unmarshal([]byte(proxy.Data), target)
 }
 
-func GetRenoWebAddressID(needle string) int {
-	search := addressSearchSearch{
+// AddressID will lookup the address ID using needle. Only the first result will be returned.
+func (c *Client) AddressID(needle string) (int, error) {
+	search := struct {
+		Searchterm          string `json:"searchterm"`
+		Addresswithmateriel int    `json:"addresswithmateriel"`
+	}{
 		Searchterm:          needle,
-		Addresswithmateriel: 3}
-
-	jsondata, _ := json.Marshal(search)
-	log.Debugf("%s\n", jsonPrettyPrint(string(jsondata)))
-
-	response, _ := http.Post("https://rebild-sb.renoweb.dk/Legacy/JService.asmx/Adresse_SearchByString", "application/json", bytes.NewBuffer(jsondata))
-	data, _ := ioutil.ReadAll(response.Body)
-	log.Debugf("%s\n", jsonPrettyPrint(string(data)))
-
-	var d tempData
-	err := json.Unmarshal(data, &d)
-	if err != nil {
-		panic(err)
+		Addresswithmateriel: 3,
 	}
-	log.Debugf("%s\n", d.D)
 
-	var addressSearch AddressSearch
-	err = json.Unmarshal([]byte(d.D), &addressSearch)
-	if err != nil {
-		panic(err)
+	type AddressSearchList struct {
+		Value int    `json:"value,string"`
+		Label string `json:"label"`
 	}
-	log.Infof("%#v\n", addressSearch)
-	return addressSearch.List[0].Value
+
+	var result struct {
+		List []AddressSearchList
+	}
+
+	err := c.request("/Legacy/JService.asmx/Adresse_SearchByString", search, &result)
+	if err != nil {
+		return 0, err
+	}
+
+	c.debugLogger("search result: %+v", result)
+
+	// FIXME: What if we have less than one result..?
+	return result.List[0].Value, nil
 }
 
-func GetRenoWebPickupPlan(id int) PickupPlan {
-	search := pickupPlanSearch{
-		Adrid:  id,
-		Common: false}
-
-	jsondata, _ := json.Marshal(search)
-	log.Debugf("%s\n", jsonPrettyPrint(string(jsondata)))
-
-	response, _ := http.Post("https://rebild-sb.renoweb.dk/Legacy/JService.asmx/GetAffaldsplanMateriel_mitAffald", "application/json", bytes.NewBuffer(jsondata))
-	data, _ := ioutil.ReadAll(response.Body)
-	log.Debugf("%s\n", jsonPrettyPrint(string(data)))
-
-	var d tempData
-	err := json.Unmarshal(data, &d)
-	if err != nil {
-		panic(err)
+// PickupPlan will retrieve all pickup plans for addressID.
+func (c *Client) PickupPlan(addressID int) (*PickupPlan, error) {
+	search := struct {
+		Adrid  int  `json:"adrid"`
+		Common bool `json:"common"`
+	}{
+		Adrid:  addressID,
+		Common: false,
 	}
-	log.Debugf("%s\n", d.D)
 
-	var pickupPlan PickupPlan
-	err = json.Unmarshal([]byte(d.D), &pickupPlan)
+	var result PickupPlan
+
+	err := c.request("/Legacy/JService.asmx/GetAffaldsplanMateriel_mitAffald", search, &result)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
-	log.Infof("%#v\n", pickupPlan)
-	return pickupPlan
+
+	return &result, nil
 }

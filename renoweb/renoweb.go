@@ -7,7 +7,6 @@ import (
 	"net/http"
 
 	"github.com/anderskvist/DVIEnergiSmartControl/log"
-	ini "gopkg.in/ini.v1"
 )
 
 type addressSearchSearch struct {
@@ -62,9 +61,9 @@ func jsonPrettyPrint(in string) string {
 	return out.String()
 }
 
-func GetRenoWebAddressID(cfg *ini.File) int {
+func GetRenoWebAddressID(needle string) int {
 	search := addressSearchSearch{
-		Searchterm:          cfg.Section("renoweb").Key("address").String(),
+		Searchterm:          needle,
 		Addresswithmateriel: 3}
 
 	jsondata, _ := json.Marshal(search)

@@ -31,10 +31,9 @@ func main() {
 		os.Exit(1)
 	}
 
-	for t := range time.NewTicker(time.Duration(poll) * time.Second).C {
+	ticker := time.NewTicker(time.Duration(poll) * time.Second)
+	for ; true; <-ticker.C {
 		log.Notice("Tick")
-		if t == t {
-		}
 		log.Info("Getting data from RenoWeb")
 		addressID, _ := reno.AddressID(cfg.Section("renoweb").Key("address").String())
 		pickupPlans, _ := reno.PickupPlan(addressID)

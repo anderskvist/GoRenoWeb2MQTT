@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"encoding/json"
 	"net/http"
+	"strings"
+	"time"
 )
 
 // Client is a client suitable for querying the "Renoweb" API.
@@ -55,6 +57,19 @@ type PickupPlanList struct {
 	OrdningNavn   string `json:"ordningnavn"`
 	ToemningsDage string `json:"toemningsdage"`
 	ToemningsDato string `json:"toemningsdato"`
+}
+
+// ParseToemningsDato is to help parse the odd timestamp from RenoWeb
+func (p PickupPlanList) ParseToemningsDato() (time.Time, error) {
+	// Get the current timezone to try and help as much as possible - may give some
+	// odd results during shift between Daylight Saving Time and Standard Time, but
+	// we'll just ignore that for now...
+	tz, _ := time.Now().Zone()
+
+	temp := strings.Fields(p.ToemningsDato)
+
+	// In general it's required for containers to be ready at 06:00:00
+	return time.Parse("15:04:05 02-01-2006 MST", "06:00:00 "+temp[2]+" "+tz)
 }
 
 // request will perform a POST request to the API encoding payload as JSON and unmarshaling

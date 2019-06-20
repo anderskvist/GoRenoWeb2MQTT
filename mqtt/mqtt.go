@@ -36,6 +36,12 @@ func createClientOptions(clientId string, uri *url.URL) *mqtt.ClientOptions {
 	return opts
 }
 
+func pub(t string, s string) {
+	if token := pubConnection.Publish(t, 0, false, s); token.Wait() && token.Error() != nil {
+		log.Fatal(token.Error())
+	}
+}
+
 // SendToMQTT will send RenoWeb data to MQTT
 func SendToMQTT(cfg *ini.File, pickupPlans renoweb.PickupPlan) {
 	mqttURL := cfg.Section("mqtt").Key("url").String()
@@ -49,13 +55,13 @@ func SendToMQTT(cfg *ini.File, pickupPlans renoweb.PickupPlan) {
 		log.Debug("Connecting to MQTT")
 	}
 	for i, pickupPlan := range pickupPlans.List {
-		pubConnection.Publish(fmt.Sprintf("renoweb/pickup/%d/ordningnavn", i), 0, false, fmt.Sprintf("%s", pickupPlan.OrdningNavn))
-		pubConnection.Publish(fmt.Sprintf("renoweb/pickup/%d/toemningsdato", i), 0, false, fmt.Sprintf("%s", pickupPlan.ToemningsDato))
+		pub(fmt.Sprintf("renoweb/pickup/%d/ordningnavn", i), fmt.Sprintf("%s", pickupPlan.OrdningNavn))
+		pub(fmt.Sprintf("renoweb/pickup/%d/toemningsdato", i), fmt.Sprintf("%s", pickupPlan.ToemningsDato))
 
 		t, _ := pickupPlan.ParseToemningsDato()
-		pubConnection.Publish(fmt.Sprintf("renoweb/pickup/%d/time", i), 0, false, fmt.Sprintf("%s", t))
-		pubConnection.Publish(fmt.Sprintf("renoweb/pickup/%d/hours", i), 0, false, fmt.Sprintf("%.0f", time.Until(t).Hours()))
-		pubConnection.Publish(fmt.Sprintf("renoweb/pickup/%d/days", i), 0, false, fmt.Sprintf("%.0f", time.Until(t).Hours()/24))
+		pub(fmt.Sprintf("renoweb/pickup/%d/time", i), fmt.Sprintf("%s", t))
+		pub(fmt.Sprintf("renoweb/pickup/%d/hours", i), fmt.Sprintf("%.0f", time.Until(t).Hours()))
+		pub(fmt.Sprintf("renoweb/pickup/%d/days", i), fmt.Sprintf("%.0f", time.Until(t).Hours()/24))
 	}
-	pubConnection.Publish("renoweb/pickup/lastupdate", 0, false, time.Now().Format("2006-01-02 15:04:05"))
+	pub("renoweb/pickup/lastupdate", time.Now().Format("2006-01-02 15:04:05"))
 }

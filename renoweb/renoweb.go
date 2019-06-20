@@ -3,6 +3,7 @@ package renoweb
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"strings"
 	"time"
@@ -67,6 +68,11 @@ func (p PickupPlanList) ParseToemningsDato() (time.Time, error) {
 	tz, _ := time.Now().Zone()
 
 	temp := strings.Fields(p.ToemningsDato)
+
+	// Check if we get 3 elements - if we don't something changed and we cannot trust ToemningsDato
+	if len(temp) != 3 {
+		return time.Time{}, errors.New("Cannot parse ToemningsDato")
+	}
 
 	// In general it's required for containers to be ready at 06:00:00
 	return time.Parse("15:04:05 02-01-2006 MST", "06:00:00 "+temp[2]+" "+tz)

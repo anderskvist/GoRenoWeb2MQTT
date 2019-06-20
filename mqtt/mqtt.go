@@ -48,11 +48,13 @@ func SendToMQTT(cfg *ini.File, pickupPlans renoweb.PickupPlan) {
 		pubConnection = connect("pub", uri)
 	}
 	for i, pickupPlan := range pickupPlans.List {
-		pubConnection.Publish(fmt.Sprintf("renoweb/pickup/%d/name", i), 0, false, fmt.Sprintf("%s", pickupPlan.MaterielNavn))
-		pubConnection.Publish(fmt.Sprintf("renoweb/pickup/%d/id", i), 0, false, fmt.Sprintf("%d", pickupPlan.ID))
 		pubConnection.Publish(fmt.Sprintf("renoweb/pickup/%d/ordningnavn", i), 0, false, fmt.Sprintf("%s", pickupPlan.OrdningNavn))
-		pubConnection.Publish(fmt.Sprintf("renoweb/pickup/%d/toemningsdage", i), 0, false, fmt.Sprintf("%s", pickupPlan.ToemningsDage))
 		pubConnection.Publish(fmt.Sprintf("renoweb/pickup/%d/toemningsdato", i), 0, false, fmt.Sprintf("%s", pickupPlan.ToemningsDato))
 
+		t, _ := pickupPlan.ParseToemningsDato()
+		pubConnection.Publish(fmt.Sprintf("renoweb/pickup/%d/time", i), 0, false, fmt.Sprintf("%s", t))
+		pubConnection.Publish(fmt.Sprintf("renoweb/pickup/%d/hours", i), 0, false, fmt.Sprintf("%.0f", time.Until(t).Hours()))
+		pubConnection.Publish(fmt.Sprintf("renoweb/pickup/%d/days", i), 0, false, fmt.Sprintf("%.0f", time.Until(t).Hours()/24))
 	}
+	pubConnection.Publish("renoweb/pickup/lastupdate", 0, false, time.Now().Format("2006-01-02 15:04:05"))
 }

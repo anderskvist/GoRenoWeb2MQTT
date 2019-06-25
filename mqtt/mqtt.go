@@ -51,8 +51,8 @@ func SendToMQTT(cfg *ini.File, pickupPlans renoweb.PickupPlan) {
 	}
 
 	if pubConnection == nil {
-		pubConnection = connect("RenoWeb", uri)
-		log.Debug("Connecting to MQTT")
+		pubConnection = connect("RenoWeb-pub", uri)
+		log.Debug("Connecting to MQTT (pub)")
 	}
 	for i, pickupPlan := range pickupPlans.List {
 		pub(fmt.Sprintf("renoweb/pickup/%d/ordningnavn", i), fmt.Sprintf("%s", pickupPlan.OrdningNavn))

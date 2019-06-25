@@ -16,8 +16,8 @@ COPY . .
 # https://stackoverflow.com/questions/28031603/what-do-three-dots-mean-in-go-command-line-invocations
 RUN go get -d -v ./...
 
-# Install the package
-RUN go install -v ./...
+# Install the package set date and git revision as version
+RUN go install -ldflags "-X github.com/anderskvist/GoHelpers/version.Version=`date -u '+%Y%m%d-%H%M%S'`-`git rev-parse --short HEAD`" -v ./...
 
 # Run the executable
 CMD ["GoRenoWeb2MQTT","/config.ini"]

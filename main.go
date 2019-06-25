@@ -4,6 +4,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/anderskvist/GoHelpers/version"
+
 	"github.com/anderskvist/GoRenoWeb2MQTT/mqtt"
 	"github.com/anderskvist/GoRenoWeb2MQTT/renoweb"
 
@@ -18,6 +20,8 @@ func main() {
 		log.Criticalf("Fail to read file: %v", err)
 		os.Exit(1)
 	}
+
+	log.Infof("GoRenoWeb version: %s.\n", version.Version)
 
 	poll := cfg.Section("main").Key("poll").MustInt(60)
 	log.Infof("Polltime is %d seconds.\n", poll)

@@ -4,12 +4,12 @@ import (
 	"os"
 	"time"
 
+	"github.com/anderskvist/GoHelpers/log"
 	"github.com/anderskvist/GoHelpers/version"
 
 	"github.com/anderskvist/GoRenoWeb2MQTT/mqtt"
 	"github.com/anderskvist/GoRenoWeb2MQTT/renoweb"
 
-	"github.com/anderskvist/DVIEnergiSmartControl/log"
 	ini "gopkg.in/ini.v1"
 )
 

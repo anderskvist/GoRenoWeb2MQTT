@@ -1,7 +1,7 @@
 package mqtt
 
 import (
-	log "github.com/anderskvist/DVIEnergiSmartControl/log"
+	log "github.com/anderskvist/GoHelpers/log"
 	renoweb "github.com/anderskvist/GoRenoWeb2MQTT/renoweb"
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	ini "gopkg.in/ini.v1"
